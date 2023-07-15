@@ -1,0 +1,34 @@
+<html>
+<body>
+<pre>
+<h1>ﾋﾞﾙﾄﾞのﾛｸﾞ</h1>
+<h3>
+--------------------構成: clientForWindows - Win32 Debug--------------------
+</h3>
+<h3>ｺﾏﾝﾄﾞ ﾗｲﾝ</h3>
+一時ﾌｧｲﾙ "C:\DOCUME~1\h_sakai\LOCALS~1\Temp\RSPE.tmp" を作成し、次の内容を記録します
+[
+/nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Debug/clientForWindows.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"C:\YRC\MotoPro\Feasibility\mpEthernet\TCP\clientForWindows\client.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\h_sakai\LOCALS~1\Temp\RSPE.tmp" 
+一時ﾌｧｲﾙ "C:\DOCUME~1\h_sakai\LOCALS~1\Temp\RSPF.tmp" を作成し、次の内容を記録します
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Ws2_32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/clientForWindows.pdb" /debug /machine:I386 /out:"Debug/clientForWindows.exe" /pdbtype:sept 
+.\Debug\client.obj
+.\Debug\stdafx.obj
+]
+ｺﾏﾝﾄﾞ ﾗｲﾝ "link.exe @C:\DOCUME~1\h_sakai\LOCALS~1\Temp\RSPF.tmp" の作成中
+<h3>ｱｳﾄﾌﾟｯﾄ ｳｨﾝﾄﾞｳ</h3>
+ｺﾝﾊﾟｲﾙ中...
+client.cpp
+C:\YRC\MotoPro\Feasibility\mpEthernet\TCP\clientForWindows\client.cpp(105) : warning C4508: 'main' : 関数に戻り値の型が指定されていません。戻り値を void 型と見なします。
+ﾘﾝｸ中...
+
+
+
+<h3>結果</h3>
+clientForWindows.exe - ｴﾗｰ 0、警告 1
+</pre>
+</body>
+</html>

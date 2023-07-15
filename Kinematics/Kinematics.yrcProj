@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<MotoPlusProject>
+  <ProjectName>Kinematics</ProjectName>
+  <FilesInProject>
+    <FileForProject>mpMain.c</FileForProject>
+  </FilesInProject>
+  <LastFileOpened>mpMain.c</LastFileOpened>
+  <UsrInit>False</UsrInit>
+  <ProjectType>Executable</ProjectType>
+  <Debug>
+    <DebugIP>
+    </DebugIP>
+    <DebugUser>Net_Maint_Mng</DebugUser>
+    <DebugPass>99999999</DebugPass>
+  </Debug>
+  <Build>
+    <CompileCommand>mpbuilder\gnu\4.3.3-vxworks-6.9\x86-win32\bin\ccpentium.exe -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -g -MD -MP -DCPU=_VX_ATOM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_WRS_KERNEL -I"~ProjectDir~" -I"~IncludeDir~" -c "~FilePath~" -o "~OutputPath~"
+</CompileCommand>
+    <BuildCommand>mpbuilder\gnu\4.3.3-vxworks-6.9\x86-win32\bin\ccpentium.exe -nostdlib -r -WI,-X -WI~FileList~ -o "~OutputPath~"
+</BuildCommand>
+    <IncludeDir>C:\Program Files\Yaskawa\MotoPlusIDE_YRC\mpbuilder\inc</IncludeDir>
+  </Build>
+  <ProjectFileVersion>v1.0.1</ProjectFileVersion>
+  <ConvertTabs>False</ConvertTabs>
+</MotoPlusProject>

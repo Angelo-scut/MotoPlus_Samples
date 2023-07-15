@@ -1,0 +1,42 @@
+{
+    "configurations": [
+        {
+            "name": "C/C++: g++.exe build and debug active file",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+            "args": [],  // 参数，命令行直接输入给main的
+            "stopAtEntry": false,  // 编译器添加的断点，没有添加任何断点，如果设置为true会导致停在main函数
+            "cwd": "${fileDirname}",
+            "environment": [
+                {
+                    "name": "LD_LIBRARY_PATH", 
+                    "value": "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.6/lib:D:/OpenCV/opencv4.5.5/minGW-make/install/x64/mingw/lib:C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.6/lib/x64:$LD_LIBRARY_PATH"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "D:\\mingw64\\mingw64\\bin\\gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: g++.exe build active file"
+        },
+        {
+            "name": "CUDA C++: Launch",
+            "type": "cuda-gdb",
+            "request": "launch",
+            "program": ""
+        }
+    ],
+    "version": "2.0.0"
+}

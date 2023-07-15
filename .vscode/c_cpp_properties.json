@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "G++",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "D:\\MotoPlus\\mpbuilder\\inc\\**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "windows-gcc-x64",
+            "compilerPath": "D:/mingw64/mingw64/bin/g++.exe"
+        }
+    ],
+    "version": 4
+}

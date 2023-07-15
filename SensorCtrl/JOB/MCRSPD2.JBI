@@ -1,0 +1,11 @@
+/JOB
+//NAME MCRSPD2
+//POS
+///NPOS 0,0,0,0,0,0
+//INST
+///DATE 2010/10/22 12:44
+///ATTR SC,RW,MC
+///GROUP1 RB1
+NOP
+SKILLSND "spdoverride_off"
+END

@@ -1,0 +1,35 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++.exe build active file",
+            "command": "D:\\mingw64\\mingw64\\bin\\g++.exe",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "-I", "D:\\MotoPlus\\mpbuilder\\inc",
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Compile tensorRT lib."
+        },
+        {
+            "label": "nvcc",
+            "type": "shell",
+            "command": "nvcc",
+            "args": ["-g","-G","-o","${fileDirname}/test","${file}"]
+        }
+    ],
+    "version": "2.0.0"
+}
