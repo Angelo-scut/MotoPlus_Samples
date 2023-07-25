@@ -8,7 +8,7 @@ extern void moto_plus0_task(void);
 extern void moto_plus1_task(void);
 
 // for DATA
-extern SEM_ID semid;
+extern SEM_ID semid;  // 外部定义的semid，跨了个文件
 
 void moto_plus0_task(void)
 {
@@ -16,8 +16,8 @@ void moto_plus0_task(void)
 
 	while (1)
 	{
-		mpSemGive(semid);
-		mpTaskDelay(2500);
+		mpSemGive(semid);  // 发出信号，通过之前定义的信号槽
+		mpTaskDelay(2500);  // 暂停2.5s
 	}
 }
 
@@ -34,7 +34,7 @@ void moto_plus1_task(void)
 	while (1)
 	{
 		run_cnt++;
-		status = mpSemTake(semid, WAIT_FOREVER);
+		status = mpSemTake(semid, WAIT_FOREVER);  // 一直等待信号的发出，收到后才退出，问题是收到了什么鬼信号？
 		if (status == ERROR)
 		{
 			printf("semTake Error![%d]\n", run_cnt);

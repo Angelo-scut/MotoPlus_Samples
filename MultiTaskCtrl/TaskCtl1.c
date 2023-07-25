@@ -4,7 +4,7 @@
 #include "motoPlus.h"
 
 // for GLOBAL DATA DEFINITIONS
-SEM_ID semid;
+SEM_ID semid;  // 信号ID，指针类型
 
 // for IMPORT API & FUNCTIONS
 extern void moto_plus0_task(void);
@@ -20,7 +20,7 @@ void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5,
 			    arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 	tid2 = mpCreateTask(MP_PRI_TIME_NORMAL, MP_STACK_SIZE, (FUNCPTR)moto_plus1_task,
 			    arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-	semid = mpSemBCreate(SEM_Q_FIFO, SEM_EMPTY);	// バイナリセマフォ
+	semid = mpSemBCreate(SEM_Q_FIFO, SEM_EMPTY);	// バイナリセマフォ 创建一个信号量
 
 	puts("Exit mpUsrRoot!");
 	mpExitUsrRoot;	//(or) mpSuspendSelf;

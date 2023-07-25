@@ -67,7 +67,7 @@ void ap_TCP_Sserver(ULONG portNo)
 
             memset(buff, 0, sizeof(buff));
 
-            bytesRecv = mpRecv(acceptHandle, buff, BUFF_MAX, 0);
+            bytesRecv = mpRecv(acceptHandle, buff, BUFF_MAX, 0);  // 等待接受来自client的字符
 
             if (bytesRecv < 0)
                 break;

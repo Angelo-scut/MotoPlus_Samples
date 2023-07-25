@@ -16,7 +16,7 @@ static unsigned int cycletime;
 
 #define	CYCLETIME  	50			//[msec]
 #define	RTC_TIME  	1			//[msec]
-#define	MOVE_DISTANCE  	50000	//[micro meter]
+#define	MOVE_DISTANCE  	50000	//[micro meter] 微米，毫米是millimeter
 #define	PULSE_TIME  20			//[msec]
 
 #define	ON  	1
@@ -133,7 +133,7 @@ void moto_plus1_task(void)
 				// Copy current position to P variable
 				memset(&mp_posvar_data.ulValue[0], 0, (sizeof(long) * 10 )); // all clear
 				memcpy(&mp_posvar_data.ulValue[2], &mp_cart_pos_rsp_data.lPos[0], (sizeof(long) * 6));  
-				mp_posvar_data.ulValue[0] |= (long)(mp_cart_pos_rsp_data.sConfig << 8);
+				mp_posvar_data.ulValue[0] |= (long)(mp_cart_pos_rsp_data.sConfig << 8);  // 按位计算，左移8位，也就是用低8位覆盖高8位
 				case1state = 1;
 			}
 			mp_posvar_data.usType = MP_RESTYPE_VAR_ROBOT;  

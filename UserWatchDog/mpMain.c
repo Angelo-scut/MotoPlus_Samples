@@ -1,4 +1,9 @@
-﻿#include "motoPlus.h"
+﻿/**
+ * @brief 这里原来只是看门狗的封装，通过调用SetMultiDVar，就可以完成对应功能
+ * 
+ */
+
+#include "motoPlus.h"
 #include "funclib.h"
 
 /*--------------------------------------------------------------------------------------------------*/
@@ -15,7 +20,7 @@ FLOAT	ScanTime = 0., LapTime = 0.;
 LONG				DVvalue[DVAL_NUM];
 MP_USR_WDG_ROUTINE	wdRoutine[2];
 LONG				ClearCnt[2];
-MP_WDG_HANDLE		handle[2];
+MP_WDG_HANDLE		handle[2];  // 可能储存的是地址
 int					delay[2];
 /*--------------------------------------------------------------------------------------------------*/
 
@@ -79,7 +84,7 @@ static void mp_seg_mon_task(void)
 #if DebugPrint == ON
 	printf("fnc ptr!! [%d] [%d]\n", wdRoutine[0], wdRoutine[1]);
 #endif
-	GetParameter( );
+	GetParameter();  // 获取D变量的值，Dog->D
 
 	FOREVER
 	{
@@ -94,7 +99,7 @@ static void mp_seg_mon_task(void)
 		for( i = 0; i <2; i++ )
 		{
 			//D061,D062
-			if( (DVvalue_last[i] == 0) && (DVvalue[11 + i] == 1) )
+			if( (DVvalue_last[i] == 0) && (DVvalue[11 + i] == 1) )  // 0->1则启动
 			{
 				Cnt[i] = 0;
 				rc = mpUsrWdogStart( handle[i] );
@@ -103,9 +108,9 @@ static void mp_seg_mon_task(void)
 			}
 			DVvalue_last[i] = DVvalue[11 + i];
 			
-			if( DVvalue[11 + i] == 1 )
+			if( DVvalue[11 + i] == 1 )  // 已经启动了的话
 			{
-				if( ClearCnt[i] > Cnt[i] )
+				if( ClearCnt[i] > Cnt[i] )  // 计数，如果开门狗计数器达到了限定值，则清零
 				{
 					++Cnt[i];
 					if( ClearCnt[i] == Cnt[i] )
@@ -135,7 +140,7 @@ static void GetParameter(void)
 	DVvalue053 = DVvalue[3];	//WdogClear
 
 	//Get DVar value
-	if( mpGetMultiDVar(50, DVvalue, DVAL_NUM) == 0 )
+	if( mpGetMultiDVar(50, DVvalue, DVAL_NUM) == 0 )  // 获取D的值，那么D的值在哪设置呢？有且只有这里赋值了，，这里原来只是看门狗的封装，通过调用SetMultiDVar，就可以完成对应功能
 	{
 		
 		//Get index value : D054
@@ -156,9 +161,9 @@ static void GetParameter(void)
 		ClearCnt[1] = DVvalue[9];
 
 		//WdogCreate
-		if( (DVvalue050 == 0) && (DVvalue[0] == 1) ) //D050 "0"->"1"
+		if( (DVvalue050 == 0) && (DVvalue[0] == 1) ) //D050 "0"->"1"  根据变化过程确定函数
 		{
-			handle[index] = mpUsrWdogCreate( delay[index] , wdRoutine[index] );
+			handle[index] = mpUsrWdogCreate( delay[index] , wdRoutine[index] );  // 看门狗创建
 			printf("WdogCreate(%d)!! [delay = %d] [wdRoutine = %d] [handle = %d]\n",
 									index, delay[index], wdRoutine[index], handle[index]);
 		}

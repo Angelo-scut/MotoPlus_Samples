@@ -89,6 +89,7 @@
         "strstream": "cpp",
         "valarray": "cpp",
         "__mutex_base": "cpp",
-        "__threading_support": "cpp"
+        "__threading_support": "cpp",
+        "motoplus.h": "c"
     }
 }

@@ -39,12 +39,12 @@ void mpTask1(void){
     //TODO: Add the code for this task
     FOREVER{
         memset(&varInfo,0,sizeof(varInfo));
-        varInfo.var_type = MP_VAR_B;
-        varInfo.var_no = 0;
+        varInfo.var_type = MP_VAR_B;  // unsigned char
+        varInfo.var_no = 0;  // No
         // waiting for start event.
         printf("\n");
         printf("... waiting for start event.\n");
-        while (varInfo.val.b == 0){
+        while (varInfo.val.b == 0){  // unsigned char数据等于零
             mpTaskDelay(delay);
             if ((rc = mpGetUserVars(&varInfo)) < 0)
                 break;

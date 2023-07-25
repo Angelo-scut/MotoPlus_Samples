@@ -1,11 +1,14 @@
-﻿
-//mpMain.c
-//
-//This contains mpUsrRoot which is the entry point for your MotoPlus application
+﻿/* TcpSvr2.c */
+/* Copyright 2009 YASKAWA ELECTRIC All Rights reserved. */
 
-//ADDITIONAL INCLUDE FILES 
-//(Note that motoPlus.h should be included in every source file)
 #include "motoPlus.h"
+
+// for API & FUNCTIONS
+void moto_plus0_task(void);
+void ap_TCP_Sserver(ULONG portNo);
+void sensSomeWorkTask(char *string);
+#define PORT        11000
+#define BUFF_MAX    1023
 
 #define	COMMAND_0		0	// Unknown
 #define COMMAND_1		1	// corrpath
@@ -20,149 +23,161 @@
 #define COMBI_2			2
 #define COMBI_3			3
 
-//GLOBAL DATA DEFINITIONS
-int nTaskID1;
-int nTaskID2;
-MSG_Q_ID msgQId;
-
 int command_no;
 
-//FUNCTION PROTOTYPES
-void sensCommRcvTask(void);
-void sensSomeWorkTask(void);
-
-//FUNCTION DEFINITIONS
-void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
-{	
-	msgQId = mpMsgQCreate(1, sizeof(SYS2MP_SENS_MSG), MSG_Q_FIFO);
-
-	nTaskID1 = mpCreateTask(MP_PRI_TIME_CRITICAL, MP_STACK_SIZE, (FUNCPTR)sensCommRcvTask,
-						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-
-	nTaskID2 = mpCreateTask(MP_PRI_IP_CLK_TAKE, MP_STACK_SIZE, (FUNCPTR)sensSomeWorkTask,
-						arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);	
-	
-	mpExitUsrRoot;
-}
-
-
-//Command Receive Task
-void sensCommRcvTask(void)
+void moto_plus0_task(void)
 {
-	SYS2MP_SENS_MSG msg;
-    int status;
-    
-	memset(&msg, CLEAR, sizeof(SYS2MP_SENS_MSG));
-		
-	FOREVER
-	{
-		mpEndSkillCommandProcess(MP_SL_ID1, &msg);
-		status = mpReceiveSkillCommand(MP_SL_ID1, &msg);  // 接收命令，但是实际工作中到底谁发的command呢？
-		
-		if( status == OK )
-		{
-			printf("mpReceiveSkillCommand OK\n\r");
-			printf("main_comm %d\n\r", msg.main_comm);
-			printf("sub_comm %d\n\r", msg.sub_comm);
-			printf("exe_tsk %d\n\r", msg.exe_tsk);
-			printf("exe_apl %d\n\r", msg.exe_apl);
-			printf("comm_link %s\n\r", msg.cmd);
-		}
-		else
-		{
-			printf("mpReceiveSkillCommand Error\n\r");
-			mpTaskDelay(100);
-			continue;
-		}
-		
-		switch(msg.main_comm)
-		{
-			case MP_SKILL_COMM:
-				switch(msg.sub_comm)
-				{
-					case MP_SKILL_SEND:
-						if(strcmp(msg.cmd, "corrpath") == 0)
-						{
-							command_no = COMMAND_1;
-							printf("Command Recive  CorrPath\n\r");
-						}
-						else if(strcmp(msg.cmd, "spdoverride_on") == 0)
-						{
-							command_no = COMMAND_2;
-							printf("Command Recive  SpdOverride_on\n\r");
-						}
-						else if(strcmp(msg.cmd, "spdoverride_off") == 0)
-						{
-							command_no = COMMAND_3;
-							printf("Command Recive  SpdOverride_off\n\r");
-						}
-						else if(strcmp(msg.cmd, "spdoverride_0") == 0)
-						{
-							command_no = COMMAND_4;
-							printf("Command Recive  spdoverride_0\n\r");
-						}
-						else if(strcmp(msg.cmd, "forcepathend") == 0)
-						{
-							command_no = COMMAND_5;
-							printf("Command Recive  ForcePathEnd\n\r");
-						}
-						else if(strcmp(msg.cmd, "combination_test") == 0)
-						{
-							command_no = COMMAND_6;
-							printf("Command Recive  combination_test\n\r");
-						}
-						else
-						{
-							command_no = COMMAND_0;
-							printf("Unknown Command\n\r");
-						}	
-						break;
-					
-					case MP_SKILL_END:
-						printf("MP_SKILL_END\n\r");		
-						break;
-						
-					default:
-						printf("Unknown Sub Command\n\r");
-						break;
-				}
-				break;
-			
-			case MP_SL_RST_COMM:
-								
-				switch(msg.sub_comm)
-				{
-					case MP_SL_SOFTWARE_RST:
-						printf("MP_SL_SOFTWARE_RST\n\r");		
-						break;
+    puts("Activate moto_plus0_task!");
 
-					case MP_SL_ALM_RST:
-						printf("MP_SL_ALM_RST\n\r");		
-						break;
+    ap_TCP_Sserver(PORT);
 
-					case MP_START_SEG_CLK:
-						printf("MP_START_SEG_CLK\n\r");		
-						break;
-
-					case MP_SE_PRM_TRANS:
-						printf("MP_SE_PRM_TRANS\n\r");		
-						break;
-					
-					default:
-						printf("Unknown Sub Command\n\r");
-						break;
-				}
-				break;
-
-			default:
-				printf("Unknown Main Command\n\r");
-				break;
-		}
-	}
+    mpSuspendSelf;
 }
 
+char *strupr(char *string);
 
-void sensSomeWorkTask(void)
+void ap_TCP_Sserver(ULONG portNo)
+{
+    int     sockHandle;
+    struct  sockaddr_in     serverSockAddr;
+    int     rc;
+	MP_CTRL_GRP_SEND_DATA mp_ctrl_grp_send_data;
+	MP_CART_POS_RSP_DATA mp_cart_pos_rsp_data;
+
+    /*printf("Simple TCP server\n");*/
+
+    sockHandle = mpSocket(AF_INET, SOCK_STREAM, 0);
+    if (sockHandle < 0)
+        return;
+
+    memset(&serverSockAddr, 0, sizeof(serverSockAddr));
+    serverSockAddr.sin_family = AF_INET;
+    serverSockAddr.sin_addr.s_addr = INADDR_ANY;
+    serverSockAddr.sin_port = mpHtons(portNo);
+
+    rc = mpBind(sockHandle, (struct sockaddr *)&serverSockAddr, sizeof(serverSockAddr)); 
+    if (rc < 0)
+        goto closeSockHandle;
+
+    rc = mpListen(sockHandle, SOMAXCONN);
+    if (rc < 0)
+        goto closeSockHandle;
+
+    while (1)
+    {
+        int     acceptHandle;
+        struct  sockaddr_in     clientSockAddr;
+        int     sizeofSockAddr;
+
+        memset(&clientSockAddr, 0, sizeof(clientSockAddr));
+        sizeofSockAddr = sizeof(clientSockAddr);
+
+        acceptHandle = mpAccept(sockHandle, (struct sockaddr *)&clientSockAddr, &sizeofSockAddr);
+
+        if (acceptHandle < 0)
+            break;
+
+        while( 1 )
+        {
+            int     bytesRecv;
+            int     bytesSend;
+			int     i;
+			int		j;
+			int     k;
+			int     len;
+            char    buff[BUFF_MAX + 1];
+			char    val[BUFF_MAX + 1];
+			char	location[BUFF_MAX + 1];
+//			char	separator[20];
+			long	position;
+
+			//初始化
+            memset(buff, 0, sizeof(buff));
+			memset(val, 0, sizeof(val));
+			memset(location, 0, sizeof(location));
+//			memset(separator, 0, sizeof(separator));
+
+			//接收TCP通讯
+            bytesRecv = mpRecv(acceptHandle, buff, BUFF_MAX, 0);
+
+			//接收不成功，退出
+            if (bytesRecv < 0)
+                break;
+
+            /* 受信データを大文字に変換して送り返す */
+            /*strupr(buff);*/
+//            command_no=COMMAND_0;
+			//判断发送来的信息的类型（功能#种类#数值）
+//			len = strlen(buff);
+////			command_no = buff[0];
+//			//偏差类型提取即移动哪个轴
+//
+//			//偏差数值提取
+//			k=0;
+//			for (i = 4; i < len; i++) {
+//				val[k++]=buff[i];
+//			}
+
+			//返回坐标系
+			mp_ctrl_grp_send_data.sCtrlGrp = 0;	//  指定第一个机器人
+			if (mpGetCartPos(&mp_ctrl_grp_send_data, &mp_cart_pos_rsp_data) != 0)//错误则退出循环
+			{
+				break;
+			}
+//			separator = '#';
+			memset(buff, 0, sizeof(buff));
+			k = 0;
+			for (j = 0; j < 6; j++) {
+				memcpy(position, &mp_cart_pos_rsp_data.lPos[j], (sizeof(long) * 6));
+				memset(location, 0, sizeof(location));
+				while (position) {
+					location[k++] = position % 10 + '0';
+					position = position / 10;
+				}
+//				strcat(buff, location);
+//				if(j!=5)strcat(buff, '#');
+				location[k++]='#';
+			}
+			for(j=0;j<sizeof(location);j++){
+				buff[j]=location[j];
+			}
+			//(纠偏功能)功能
+//			sensSomeWorkTask(val);
+			
+            bytesSend = mpSend(acceptHandle, buff, BUFF_MAX, 0);
+
+//            if (bytesSend != bytesRecv)
+//                break;
+
+            if (strncmp(buff, "EXIT", 4) == 0 || strncmp(buff, "exit", 4) == 0)
+                break;
+        }
+        mpClose(acceptHandle);
+    }
+closeSockHandle:
+    mpClose(sockHandle);
+
+    return;
+}
+
+//char *strupr(char *string)
+//{
+//    int		i;
+//    int     len;
+//
+//    len = strlen(string);
+//	for (i=0; i < len; i++)
+//	{
+//	    if (isalpha((unsigned char)string[i]))
+//	    {
+//		    string[i] = toupper(string[i]);
+//        }
+//	}
+//    return (string);
+//}
+//Command Receive Task
+
+void sensSomeWorkTask(char *string)
 {
 	SYS2MP_SENS_MSG msg;
 	int ret;
@@ -194,12 +209,14 @@ void sensSomeWorkTask(void)
 
 	FOREVER
 	{
-		mpClkAnnounce(MP_INTERPOLATION_CLK);  // 每一个插值时钟运行一次
-		
+		mpClkAnnounce(MP_INTERPOLATION_CLK);
+		int endProcess = 0;
+
 		switch(command_no)
 		{
 			// Unknown
 			case COMMAND_0:
+				endProcess=1;
 				break;
 		
 			//PutCorrPath
@@ -210,7 +227,6 @@ void sensSomeWorkTask(void)
 				{
 					printf("mpMeiPutCorrPath Error  ret = %d\n\r", ret);
 				}
-			
 				dy = 0;
 				cnt++;
 			
@@ -218,12 +234,13 @@ void sensSomeWorkTask(void)
 				if(cnt > 250)
 				{
 					cnt = 0;
-					dy = 1000;
 					CorrPath_cnt++;
+					dy=atoi(string);
 					if(CorrPath_cnt > 10)
 					{
-						command_no = COMMAND_0;
+//						command_no = COMMAND_0;
 						CorrPath_cnt = 0;
+						endProcess = 1;
 					}
 				}
 				
@@ -353,6 +370,9 @@ void sensSomeWorkTask(void)
 				dy = 0;
 				cnt = 0;
 				break;
+		}
+		if (endProcess==1) {
+			break;
 		}
 	}
 }
