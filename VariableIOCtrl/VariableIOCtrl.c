@@ -133,12 +133,12 @@ void moto_plus1_task(void)
 				// Copy current position to P variable
 				memset(&mp_posvar_data.ulValue[0], 0, (sizeof(long) * 10 )); // all clear
 				memcpy(&mp_posvar_data.ulValue[2], &mp_cart_pos_rsp_data.lPos[0], (sizeof(long) * 6));  
-				mp_posvar_data.ulValue[0] |= (long)(mp_cart_pos_rsp_data.sConfig << 8);  // 按位计算，左移8位，也就是用低8位覆盖高8位
+				mp_posvar_data.ulValue[0] |= (long)(mp_cart_pos_rsp_data.sConfig << 8);  // 按位计算，左移8位，也就是用低8位覆盖高8位,这是俯仰等定义
 				case1state = 1;
 			}
 			mp_posvar_data.usType = MP_RESTYPE_VAR_ROBOT;  
-			mp_posvar_data.usIndex = 10;			// P var number (P010)
-			mp_posvar_data.ulValue[0] |= 0x0010;	// Cartesian (base coordinates) 
+			mp_posvar_data.usIndex = 10;			// P var number (P010)，这里确定是P010
+			mp_posvar_data.ulValue[0] |= 0x0010;	// Cartesian (base coordinates) ，这个只是确定坐标轴而已
 
 			if (turn == 0)  // set 50mm or -50mm to z direction data depending on turn vale
 			{

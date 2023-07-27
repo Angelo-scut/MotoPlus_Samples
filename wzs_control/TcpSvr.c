@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file TcpSvr.c
  * @author Zishun Wang
  * @brief TCP server in YASKAWA, receiving position information from PC TCP client
@@ -27,9 +27,12 @@ void tcp_server_task(void){
 }
 
 BOOL current_position(char *pos);
-MP_POSVAR_DATA decoding(char *msg);
+BOOL decoding(char *msg);
+
 
 extern SEM_ID semid;
+MP_CART_POS_RSP_DATA mp_cart_pos_rsp_data;  // 用于接收笛卡尔坐标的信息
+MP_POSVAR_DATA pos_data;  // 用于设置用户变量中的位置变量
 
 void ap_TCP_Sserver(ULONG portNo){
     int     sockHandle;
@@ -54,6 +57,11 @@ void ap_TCP_Sserver(ULONG portNo){
     rc = mpListen(sockHandle, SOMAXCONN);
     if (rc < 0)
         goto closeSockHandle;
+
+    // 用户数据初始化
+    memset(&pos_data.ulValue[0], 0, sizeof(LONG) * 10);
+    pos_data.usIndex = 10; // 修改的是P0010这个位置的位置变量
+    pos_data.ulValue[0] |= 0x0010;  // 设置坐标轴为基座的笛卡尔坐标系
 
     while (1)
     {
@@ -87,16 +95,20 @@ void ap_TCP_Sserver(ULONG portNo){
             if (strncmp(recv_buff, "EXIT", 4) == 0 || strncmp(recv_buff, "exit", 4) == 0)  // 如果client发送退出命令，则退出
                 break;
 
-            MP_POSVAR_DATA data_from_client = decoding(recv_buff);
+            
 
             // 若没有要退出，则返回现在机器人位姿，TODO:这里要注意时序，如果client没有处于listen状态，这里的发送是否会丢包？
-            if(current_position(send_buff))
-                bytesSend = mpSend(acceptHandle, send_buff, bytesRecv, 0);
-
-            if (bytesSend != bytesRecv)
-                break;
-
-            mpSemGive(semid);  // 发射信号，告诉处理的线程已经接收到新的位置信息了
+            if(current_position(send_buff)){
+                bytesSend = mpSend(acceptHandle, send_buff, strlen(send_buff), 0);
+                if (bytesSend < 0)
+                    break;
+                
+                if(decoding(recv_buff))  // 是否解码成功，解码成功还要进行安全判断,安全判断直接给到设置那边去
+                    mpSemGive(semid);  // 发射信号，告诉处理的线程已经接收到新的位置信息了
+            }
+                
+            // if (bytesSend != bytesRecv)
+                // break;
             
         }
         mpClose(acceptHandle);
@@ -109,21 +121,20 @@ closeSockHandle:
 
 BOOL current_position(char *pos){
     MP_CTRL_GRP_SEND_DATA mp_ctrl_grp_send_data;  // 当时机器人群组的时候，可以通过这个控制返回哪个机器人的信息
-    MP_CART_POS_RSP_DATA mp_cart_pos_rsp_data;  // 用于接收笛卡尔坐标的信息
-
     mp_ctrl_grp_send_data.sCtrlGrp = 0; // 只取机器人1的信息，因为只有一台机器人
 
-    if (mpGetCartPos(&mp_ctrl_grp_send_data, &mp_cart_pos_rsp_data) != 0)
+    if (mpGetCartPos(&mp_ctrl_grp_send_data, &mp_cart_pos_rsp_data) != 0)  // TODO:是否需要每次都对mp_cart_pos_rsp_data进行初始化
     {
         puts("get cart pos error!");
         return FALSE;
     }
 
     char temp_str[20];
-    memset(pos, 0, sizeof(pos));
+    // memset(pos, 0, sizeof(pos));  // 这里的sizeof不对哦，这里只会返回pos的地址占位数,所以只能在函数外初始化
     memset(temp_str, 0, sizeof(temp_str));
     int cur_idx = 0;  // 记录pos当前写入位置,一般都不可能超过1024
-    for (size_t i = 0; i < MAX_CART_AXES; i++)
+    int i = 0;
+    for (; i < MAX_CART_AXES; i++)
     {
         LONG temp_pos = mp_cart_pos_rsp_data.lPos[i];
         int idx = 0;
@@ -132,7 +143,8 @@ BOOL current_position(char *pos){
             temp_str[idx++] = temp_pos % 10 + '0';
             temp_pos /= 10;
         }
-        for (size_t j = idx - 1; j > -1; j--)
+        int j = idx - 1;
+        for (; j > -1; j--)
         {
             pos[cur_idx++] = temp_str[j];
         }
@@ -148,22 +160,22 @@ BOOL current_position(char *pos){
 }
 
 
-MP_POSVAR_DATA decoding(char *msg){
-    MP_POSVAR_DATA pos_data;
+BOOL decoding(char *msg){
     int msg_len = strlen(msg);
     memset(&pos_data.ulValue[0], 0, (sizeof(long) * 10));
     char *token = strtok(msg, ",");
-    pos_data.ulValue[2] = atoi(token);
-    int cur_idx = 3;
+    // pos_data.ulValue[2] = atoi(token);
+    int cur_idx = 2;
     
     while (token != NULL)
     {
+        pos_data.ulValue[cur_idx++] = atoi(token);  // 如果是其他字符，即不能转成int类型的，则会返回0
         token = strtok(NULL, ",");
-        pos_data.ulValue[cur_idx] = atoi(token);
-        cur_idx++;
+        
     }
 
-    return pos_data;
+    return cur_idx==8 ? TRUE : FALSE;  // 如果发过来的不是6个位姿的话，TODO:如果要加入速度这里需要修改一下
     
 }
+
 
