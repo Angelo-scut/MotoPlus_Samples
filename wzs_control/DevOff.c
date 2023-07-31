@@ -12,8 +12,9 @@
 #include "MacroDefine.h"
 
 extern int command_no;
-extern int speed;
+extern long speed;
 extern long offset[6];
+extern BOOL sensor_flag;
 
 void offsControlTask(void){
     int ret = 0;
@@ -41,50 +42,54 @@ void offsControlTask(void){
     {
         // 由于优先级比较高，因此不能有其他的等待函数，否则可能会导致系统报警
         mpClkAnnounce(MP_INTERPOLATION_CLK);  // 每一个插值时钟运行一次，因为要严格控制节奏，所以耗时的程序不能在这个task中执行
-        switch (command_no)
-        {
-        case COMMAND_UNKNOW:
-            break;
-        case COMMAND_CORRPATH:
-            memcpy(&corrpath_src_p.grp_pos_info[0].pos[0], &offset[0], sizeof(long) * 6);
-            ret = mpMeiPutCorrPath(MP_SL_ID1, &corrpath_src_p);  // 如果确保偏差补偿成功呢？
-            if (ret != 0)
+        if(sensor_flag){
+            switch (command_no)
             {
-                //TODO:返回错误信息
+            case COMMAND_UNKNOW:
+                break;
+            case COMMAND_CORRPATH:
+                memcpy(&corrpath_src_p.grp_pos_info[0].pos[0], &offset[0], sizeof(long) * 6);
+                ret = mpMeiPutCorrPath(MP_SL_ID1, &corrpath_src_p);  // 如果确保偏差补偿成功呢？
+                if (ret != 0)
+                {
+                    //TODO:返回错误信息
+                }
+                command_no = COMMAND_UNKNOW;  // 所有都要清除命令一次
+                break;
+            case COMMAND_FRCPATH_END:
+                ret = mpMeiPutForcePathEnd(MP_SL_ID1, ctrl_grp);
+                if (ret != 0)
+                {
+                    //TODO:返回错误信息
+                }
+                
+                command_no = COMMAND_UNKNOW;
+                break;
+            case COMMAND_SPD_OVR_ON:  // 如何获得具体的速度呢？没有直接获取速度的API，只有获取每个关节转速的mpGetFBSpeed,还要通过运动学才能转成终端运行速度，，
+                spd_src_p[0] = speed;
+                ret = mpMeiPutSpdOverride(MP_SL_ID1, ctrl_grp, spd_src_p);
+                if (ret != 0)
+                {
+                    //TODO:返回错误信息
+                }
+                
+                command_no = COMMAND_UNKNOW;
+                break;
+            case COMMAND_SPD_OVR_OFF:
+                ret = mpMeiPutSpdOverride(MP_SL_ID1, OFF, NULL);
+                if (ret != 0)
+                {
+                    //TODO:返回错误信息
+                }
+                
+                command_no = COMMAND_UNKNOW;
+                break;
+            default:
+                break;
             }
-            command_no = COMMAND_UNKNOW;  // 所有都要清除命令一次
-            break;
-        case COMMAND_FRCPATH_END:
-            ret = mpMeiPutForcePathEnd(MP_SL_ID1, ctrl_grp);
-            if (ret != 0)
-            {
-                //TODO:返回错误信息
-            }
-            
-            command_no = COMMAND_UNKNOW;
-            break;
-        case COMMAND_SPD_OVR_ON:  // 如何获得具体的速度呢？没有直接获取速度的API，只有获取每个关节转速的mpGetFBSpeed,还要通过运动学才能转成终端运行速度，，
-            spd_src_p[0] = speed;
-            ret = mpMeiPutSpdOverride(MP_SL_ID1, ctrl_grp, spd_src_p);
-            if (ret != 0)
-            {
-                //TODO:返回错误信息
-            }
-            
-            command_no = COMMAND_UNKNOW;
-            break;
-        case COMMAND_SPD_OVR_OFF:
-            ret = mpMeiPutSpdOverride(MP_SL_ID1, OFF, NULL);
-            if (ret != 0)
-            {
-                //TODO:返回错误信息
-            }
-            
-            command_no = COMMAND_UNKNOW;
-            break;
-        default:
-            break;
+            sensor_flag = FALSE;
         }
+            
     }
 
 }
