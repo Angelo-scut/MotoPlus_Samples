@@ -46,13 +46,13 @@ void mpTask1(void)
 		printf("\n--Robot minute movement--\n");
 		sData.sCtrlGrp = 0;
 		memset(&rFB_data, 0, sizeof(rFB_data));
-		mpGetFBPulsePos(&sData, &rFB_data);
+		mpGetFBPulsePos(&sData, &rFB_data);  // 返回feedback的位置，即当前位置，对应的mpGetPulsePos()返回的是命令的位置
 
 		grp_no = mpCtrlGrpId2GrpNo(MP_R1_GID);
 
 		memset(pulse, 0, sizeof(pulse));
 		printf("mpConvFBPulseToPulse()\n");
-		while ((rc = mpConvFBPulseToPulse(grp_no, rFB_data.lPos, pulse)) < 0)
+		while ((rc = mpConvFBPulseToPulse(grp_no, rFB_data.lPos, pulse)) < 0)  // 将反馈脉冲转成算术脉冲？有什么区别？
 		{
 			err_counter++;
 			if (rc != E_KINEMA_FAILURE)
@@ -80,7 +80,7 @@ void mpTask1(void)
 
 		printf("mpConvPulseToAngle()\n");
 		memset(angle, 0, sizeof(angle));
-		while ((rc = mpConvPulseToAngle(grp_no, pulse, angle)) < 0)
+		while ((rc = mpConvPulseToAngle(grp_no, pulse, angle)) < 0)  // 将位置脉冲转换成各轴的角度值
 		{
 			err_counter++;
 			if (rc != E_KINEMA_FAILURE)
@@ -108,7 +108,7 @@ void mpTask1(void)
 
 		printf("mpConvAxesToCartPos()\n");
 		memset(&rob_coord, 0, sizeof(rob_coord));
-		while ((rc = mpConvAxesToCartPos(grp_no, angle, 0, NULL, &rob_coord)) < 0)
+		while ((rc = mpConvAxesToCartPos(grp_no, angle, 0, NULL, &rob_coord)) < 0)  // 将轴的角度转换成笛卡尔坐标（机器人坐标系）
 		{
 			err_counter++;
 			if (rc != E_KINEMA_FAILURE)

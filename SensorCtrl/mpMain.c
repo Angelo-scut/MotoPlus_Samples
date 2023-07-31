@@ -57,7 +57,7 @@ void sensCommRcvTask(void)
 	FOREVER
 	{
 		mpEndSkillCommandProcess(MP_SL_ID1, &msg);
-		status = mpReceiveSkillCommand(MP_SL_ID1, &msg);  // 接收命令，但是实际工作中到底谁发的command呢？
+		status = mpReceiveSkillCommand(MP_SL_ID1, &msg);  // 接收命令，但是实际工作中到底谁发的command呢？原来他妈是JBI发的命令？
 		
 		if( status == OK )
 		{
@@ -171,7 +171,7 @@ void sensSomeWorkTask(void)
 	int CorrPath_cnt = 0;
 	int combination_test_state = COMBI_0;
 	
-	MP_POS_DATA corrpath_src_p;
+	MP_POS_DATA corrpath_src_p;  // 与MP_POSVAR_DATA类型不一样，那个是Position Variable的类型
 	long spd_src_p[MP_GRP_NUM];
 	CTRLG_T ctrl_grp = 1;
 	
@@ -181,20 +181,20 @@ void sensSomeWorkTask(void)
 	memset(&spd_src_p, CLEAR, sizeof(long) * MP_GRP_NUM);
 		
 	corrpath_src_p.ctrl_grp = 1;
-	corrpath_src_p.grp_pos_info[0].pos_tag.data[0] = 0x3f;
-	corrpath_src_p.grp_pos_info[0].pos_tag.data[3] = MP_CORR_RF_DTYPE;
-	corrpath_src_p.grp_pos_info[0].pos[0] = 0;
-	corrpath_src_p.grp_pos_info[0].pos[1] = 0;
+	corrpath_src_p.grp_pos_info[0].pos_tag.data[0] = 0x3f;  // 0x0011 1111  //只控制六个轴1-6
+	corrpath_src_p.grp_pos_info[0].pos_tag.data[3] = MP_CORR_RF_DTYPE;  // 机器人坐标系，也就是轴来的哦？？但是为什么还是走的mm？
+	corrpath_src_p.grp_pos_info[0].pos[0] = 0;  // 机器人坐标系不是轴，关节坐标系才是轴，机器人坐标系依然是笛卡尔坐标系，但是原点在哪呢？
+	corrpath_src_p.grp_pos_info[0].pos[1] = 0;  // 所以还是改成基坐标系比较好， MP_CORR_BF_DTYPE
 	corrpath_src_p.grp_pos_info[0].pos[2] = 0;
 	corrpath_src_p.grp_pos_info[0].pos[3] = 0;
 	corrpath_src_p.grp_pos_info[0].pos[4] = 0;
-	corrpath_src_p.grp_pos_info[0].pos[5] = 0;
+	corrpath_src_p.grp_pos_info[0].pos[5] = 0;  // 这个取决于在那个坐标轴下，笛卡尔坐标轴还是X,Y,Z,Rx,Ry,Rz
 		
 	spd_src_p[0] = 15000;
 
 	FOREVER
 	{
-		mpClkAnnounce(MP_INTERPOLATION_CLK);  // 每一个插值时钟运行一次
+		mpClkAnnounce(MP_INTERPOLATION_CLK);  // 每一个插值时钟运行一次，因为要严格控制节奏，所以耗时的程序不能在这个task中执行
 		
 		switch(command_no)
 		{
@@ -205,22 +205,22 @@ void sensSomeWorkTask(void)
 			//PutCorrPath
 			case COMMAND_1:
 				corrpath_src_p.grp_pos_info[0].pos[1] = dy;
-				ret = mpMeiPutCorrPath(MP_SL_ID1, &corrpath_src_p);
+				ret = mpMeiPutCorrPath(MP_SL_ID1, &corrpath_src_p);  // 第一个参数指定机器人，ID1表示第一个机器人，第二个输入的都是插值
 				if(ret != 0)
 				{
 					printf("mpMeiPutCorrPath Error  ret = %d\n\r", ret);
 				}
 			
 				dy = 0;
-				cnt++;
+				cnt++;  // 每个插值时钟+1
 			
 				//wait 1s
-				if(cnt > 250)
+				if(cnt > 250)  // 250个时钟后，才纠偏一次，纠偏1mm
 				{
 					cnt = 0;
 					dy = 1000;
 					CorrPath_cnt++;
-					if(CorrPath_cnt > 10)
+					if(CorrPath_cnt > 10)  // 纠偏了10次之后，就退出，不在纠偏
 					{
 						command_no = COMMAND_0;
 						CorrPath_cnt = 0;

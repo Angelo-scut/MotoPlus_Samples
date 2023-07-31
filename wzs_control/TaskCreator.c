@@ -8,7 +8,8 @@
  * 
  */
 
-#include "motoPlus.h"
+// #include "motoPlus.h"
+#include "MacroDefine.h"
 
 
 SEM_ID semid;
@@ -21,8 +22,6 @@ static int tid2;
 
 int nTaskID1;
 MSG_Q_ID msgQId;
-
-int command_no;
 
 void mpUsrRoot(int arg1, int arg2, int arg3, int arg4, int arg5,
 	       int arg6, int arg7, int arg8, int arg9, int arg10)

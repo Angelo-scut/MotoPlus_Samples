@@ -10,13 +10,11 @@
  * 
  */
 
-#include "motoPlus.h"
+// #include "motoPlus.h"
+#include "MacroDefine.h"
 
 void tcp_server_task(void);
 void ap_TCP_Sserver(ULONG portNo);
-
-#define PORT        11000  // 端口号
-#define BUFF_MAX    1023  // 接收数据的BUFF
 
 void tcp_server_task(void){
     puts("Activate TCP server!");
@@ -29,10 +27,15 @@ void tcp_server_task(void){
 BOOL current_position(char *pos);
 BOOL decoding(char *msg);
 
+// 写个屁帮助文档，写个readme.md就算看得起自己了
+// const char* help_str = "help/HELP: help document.\n The number of position argments must be 6, and speed must be 1. \n Except that corr_path and corr_speed(\%) must be in relative type, all the other arguments must be in absolutary type.\n Commands include 'line', 'line_vec',";
 
 extern SEM_ID semid;
 MP_CART_POS_RSP_DATA mp_cart_pos_rsp_data;  // 用于接收笛卡尔坐标的信息
 MP_POSVAR_DATA pos_data;  // 用于设置用户变量中的位置变量
+int command_no = 0;
+int speed = 10000;  // 100% 速度
+long offset[6];
 
 void ap_TCP_Sserver(ULONG portNo){
     int     sockHandle;

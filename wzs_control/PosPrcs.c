@@ -9,24 +9,14 @@
  * 
  */
 
-#include "motoPlus.h"
+// #include "motoPlus.h"
+#include "MacroDefine.h"
 
 extern SEM_ID semid;
 
 // for LOCAL DEFINITIONS
 static unsigned int run_cnt;		// for moto_plus0_task.
 static unsigned int cycletime; 
-
-#define	CYCLETIME  	50			//[msec]
-#define	RTC_TIME  	1			//[msec]
-#define	MOVE_DISTANCE  	50000	//[micro meter] 微米，毫米是millimeter
-#define	PULSE_TIME  20			//[msec]
-
-#define	ON  	1
-#define	OFF  	0
-
-#define SAFE_DIST   10000
-#define SAFE_ANGL   100000
 
 /**************************************
 **	useful function for application ***
@@ -78,8 +68,8 @@ void pos_process_task(void){
             mpPutPosVarData(&pos_data, 1);
             //BVvalue1 = 1;
             //rt = SetBVar(1, &BVvalue1);
-			SetIo(10014, ON);
-			//PulseOut(10014, 5);
+			// SetIo(10014, ON);
+			PulseOut(10014, 50);  // 不能太低，INFORM语言运行速率没那么快
         }
     }
     
