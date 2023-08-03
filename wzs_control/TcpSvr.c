@@ -26,9 +26,13 @@ void tcp_server_task(void){
 
 BOOL encoding(char *pos);
 void decoding(char *msg);
+int int2str(LONG num, char* str);
 
 // 写个屁帮助文档，写个readme.md就算看得起自己了
 // const char* help_str = "help/HELP: help document.\n The number of position argments must be 6, and speed must be 1. \n Except that corr_path and corr_speed(\%) must be in relative type, all the other arguments must be in absolutary type.\n Commands include 'line', 'line_vec',";
+
+extern STATUS GetIVar(UINT16 index, long *value);
+extern STATUS SetBVar(UINT16 index, long value);
 
 extern SEM_ID semid;
 MP_CART_POS_RSP_DATA mp_cart_pos_rsp_data;  // 用于接收笛卡尔坐标的信息
@@ -37,6 +41,8 @@ int command_no = 0;
 long speed = 10000;  // 100% 速度
 long offset[6];
 BOOL sensor_flag = FALSE;
+
+UINT16 B_addr = 0;
 
 void ap_TCP_Sserver(ULONG portNo){
     int     sockHandle;
@@ -140,23 +146,33 @@ BOOL encoding(char *pos){
     for (; i < MAX_CART_AXES; i++)
     {
         LONG temp_pos = mp_cart_pos_rsp_data.lPos[i];
-        int idx = 0;
-        while (temp_pos)
-        {
-            temp_str[idx++] = temp_pos % 10 + '0';
-            temp_pos /= 10;
-        }
-        int j = idx - 1;
+        // int idx = 0;
+        // while (temp_pos)
+        // {
+        //     temp_str[idx++] = temp_pos % 10 + '0';
+        //     temp_pos /= 10;
+        // }
+        // int j = idx - 1;
+        int j = int2str(temp_pos, temp_str);
         for (; j > -1; j--)
         {
             pos[cur_idx++] = temp_str[j];
         }
         
-        if (i < MAX_CART_AXES - 1)
+        // if (i < MAX_CART_AXES - 1)
         {
             pos[cur_idx++] = ',';
         }
         
+    }
+
+    LONG speed = 0;
+    int ret = GetIVar(SPEED_INTEGER, &speed);
+    
+    int j = int2str(speed, temp_str);
+    for (; j > -1; j--)
+    {
+        pos[cur_idx++] = temp_str[j];
     }
 
     return TRUE;
@@ -170,7 +186,7 @@ void decoding(char *msg){
     // memset(&pos_data.ulValue[0], 0, (sizeof(long) * 10));
     char *token = strtok(msg, ":");
     command_no = atoi(token);
-    token = strtok(msg, ",");
+    token = strtok(NULL, ",");
     int cur_idx = 0;
     
     while (token != NULL && cur_idx < 10)
@@ -182,25 +198,43 @@ void decoding(char *msg){
     }
 
     if (token != NULL) return;  // 如果数据位超过了10位，直接丢弃
-
+	//SetBVar(0, command_no);  // TODO: 测试用
+	//SetBVar(7, cur_idx);  // TODO: 测试用
     switch (command_no)
     {
-    case COMMAND_LINE:
+    case COMMAND_FAST_LOC_PC:
+        if(cur_idx == 6){
+            memcpy(&pos_data.ulValue[2], &data[0], (sizeof(long) * 6));
+            pos_data.usIndex = POS_VAR_FAST_LOC;
+			B_addr = B_VAR_FAST_LOC_PC;
+            mpSemGive(semid);  // 发射信号，告诉处理的线程已经接收到新的位置信息了
+        }
+        break;
+    case COMMAND_FAST_LOC_MUNAL:
+		B_addr = B_VAR_FAST_LOC_MUNAL;
+		SetBVar(B_addr, 1);
+		break;
+    case COMMAND_LINE_PC:
         if (cur_idx == 6)  // 如果发过来的不是6个位姿的话，TODO:如果要加入速度这里需要修改一下,决定不直接修改速度了，要修改直接在示教器上修改
         {
             memcpy(&pos_data.ulValue[2], &data[0], (sizeof(long) * 6));
             pos_data.usIndex = POS_VAR_LINE;
+			B_addr = B_VAR_LINE;
             mpSemGive(semid);  // 发射信号，告诉处理的线程已经接收到新的位置信息了
         }
         break;
-    case COMMAND_LINE_VEC:  // 应当由PC完成计算偏移量
-        if (cur_idx == 6)
-        {
-            memcpy(&pos_data.ulValue[2], &data[0], (sizeof(long) * 6));
-            pos_data.usIndex = POS_VAR_LINE_VEC;
-            mpSemGive(semid);
-        }
-        break;
+	case COMMAND_LINE_MANUAL:
+		B_addr = B_VAR_LINE_MANUAL;
+		SetBVar(B_addr, 1);
+		break;
+    // case COMMAND_LINE_VEC:  // 应当由PC完成计算偏移量
+    //     if (cur_idx == 6)
+    //     {
+    //         memcpy(&pos_data.ulValue[2], &data[0], (sizeof(long) * 6));
+    //         pos_data.usIndex = POS_VAR_LINE_VEC;
+    //         mpSemGive(semid);
+    //     }
+    //     break;
     case COMMAND_CORRPATH:
         if (cur_idx == 6)
         {
@@ -226,13 +260,14 @@ void decoding(char *msg){
             sensor_flag = TRUE;
         }
         break;
-    case COMMAND_CIRCLE_PC:
-        if (cur_idx == 7 && data[0] < 3)
-        {
-            memcpy(&pos_data.ulValue[2], &data[1], (sizeof(long) * 6));
-            pos_data.usIndex = POS_VAR_CIRCLE_PC + data[0];
-            mpSemGive(semid);
-        }
+    case COMMAND_CIRCLE_PC:  // 圆必须要三个点都赋值完了才能走TODO:先禁用吧
+        // if (cur_idx == 7 && data[0] < 3)
+        // {
+        //     memcpy(&pos_data.ulValue[2], &data[1], (sizeof(long) * 6));
+        //     pos_data.usIndex = POS_VAR_CIRCLE_PC + data[0];
+        //     mpSemGive(semid);
+        // }
+        break;
         
     default:
         break;
@@ -240,4 +275,24 @@ void decoding(char *msg){
 
     return;
     
+}
+
+int int2str(LONG num, char* str){
+    int idx = 0;
+	BOOL is_minus = FALSE;
+	if (num < 0)
+	{
+		num = abs(num);
+		is_minus = TRUE;
+	}
+    while (num)
+    {
+        str[idx++] = num % 10 + '0';
+        num /= 10;
+    }
+	if (is_minus)
+	{
+		str[idx++] = '-';
+	}
+    return idx - 1;
 }

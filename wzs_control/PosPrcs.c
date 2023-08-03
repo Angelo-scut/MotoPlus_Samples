@@ -38,6 +38,7 @@ extern STATUS WriteIO(UINT32 addr, UINT16 value);
 extern STATUS ReadIO(UINT32 addr, UINT16* value);
 
 extern MP_POSVAR_DATA pos_data;
+extern UINT16 B_addr;
 
 BOOL safe_guard(int pos_limit, int  angle_limit);  //  先限制每次运动只能在一个厘米范围内
 void PulseOut(UINT32 io_adr, int time);  // 对io_adr地址内触发一个时间为time的PWM
@@ -69,7 +70,8 @@ void pos_process_task(void){
             //BVvalue1 = 1;
             //rt = SetBVar(1, &BVvalue1);
 			// SetIo(10014, ON);
-			PulseOut(10014, 50);  // 不能太低，INFORM语言运行速率没那么快
+			//PulseOut(10014, PULSE_TIME);  // 不能太低，INFORM语言运行速率没那么快
+			SetBVar(B_addr, 1);
         }
     }
     
