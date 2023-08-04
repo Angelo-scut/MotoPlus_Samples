@@ -50,7 +50,7 @@ void pos_process_task(void){
     LONG BVvalue1 = 0;
     LONG rt = 0;
 
-    rt = SetBVar(1, &BVvalue1);
+    //rt = SetBVar(1, &BVvalue1);
 
     puts("Activate pos_process_task!");
 

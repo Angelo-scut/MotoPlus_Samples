@@ -18,6 +18,7 @@
 #define COMMAND_CIRCLE_MANUAL   9
 #define COMMAND_FAST_LOC_PC     10
 #define COMMAND_FAST_LOC_MUNAL  11
+#define COMMAND_EXIT            12
 
 #define POS_VAR_LINE            10  // 走直线时的position variable， P0010
 #define POS_VAR_FAST_LOC        11  // 感觉向量不应该由底层来封装，而是由上位机来封装
@@ -32,6 +33,7 @@
 #define B_VAR_CIRCLE_MANUAL     4
 #define B_VAR_FAST_LOC_PC       5
 #define B_VAR_FAST_LOC_MUNAL    6
+#define B_VAR_EXIT              7
 
 /* 中断继电器 */
 #define OUT_RELAY_LINE          10020
@@ -50,6 +52,6 @@
 // #define	OFF  	0
 
 #define SAFE_DIST               300000       // [micro meter]
-#define SAFE_ANGL               100000
+#define SAFE_ANGL               100000      // 0.000 1 degree
 
 #endif

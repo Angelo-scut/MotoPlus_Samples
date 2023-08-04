@@ -16,13 +16,17 @@ extern long speed;
 extern long offset[6];
 extern BOOL sensor_flag;
 
+//extern STATUS SetBVar(UINT16 index, long value);
+
 void offsControlTask(void){
-    int ret = 0;
+	SYS2MP_SENS_MSG msg;
+	int ret = 0;
 
     MP_POS_DATA corrpath_src_p;
     long spd_src_p[MP_GRP_NUM];
     CTRLG_T ctrl_grp = 1;  // 指定第一个机器人
 
+	memset(&msg, CLEAR, sizeof(SYS2MP_SENS_MSG));
     memset(&corrpath_src_p, CLEAR, sizeof(MP_POS_DATA));
     memset(&spd_src_p, CLEAR, sizeof(long) * MP_GRP_NUM);
 
@@ -38,6 +42,8 @@ void offsControlTask(void){
 		
 	spd_src_p[0] = 0;  // 单位是0.01%，比如速度设置为原本的150%->150 00，有效值为1000-15000
 
+	sensor_flag = FALSE;
+
     FOREVER
     {
         // 由于优先级比较高，因此不能有其他的等待函数，否则可能会导致系统报警
@@ -48,7 +54,8 @@ void offsControlTask(void){
             case COMMAND_UNKNOW:
                 break;
             case COMMAND_CORRPATH:
-                memcpy(&corrpath_src_p.grp_pos_info[0].pos[0], &offset[0], sizeof(long) * 6);
+				//SetBVar(9, command_no);
+				memcpy(&corrpath_src_p.grp_pos_info[0].pos[0], &offset[0], sizeof(long) * 6);
                 ret = mpMeiPutCorrPath(MP_SL_ID1, &corrpath_src_p);  // 如果确保偏差补偿成功呢？
                 if (ret != 0)
                 {
@@ -57,7 +64,8 @@ void offsControlTask(void){
                 command_no = COMMAND_UNKNOW;  // 所有都要清除命令一次
                 break;
             case COMMAND_FRCPATH_END:
-                ret = mpMeiPutForcePathEnd(MP_SL_ID1, ctrl_grp);
+				//SetBVar(9, command_no);
+				ret = mpMeiPutForcePathEnd(MP_SL_ID1, ctrl_grp);
                 if (ret != 0)
                 {
                     //TODO:返回错误信息
@@ -92,4 +100,85 @@ void offsControlTask(void){
             
     }
 
+}
+
+//Command Receive Task
+void sensCommRcvTask(void)
+{
+	SYS2MP_SENS_MSG msg;
+	int status;
+
+	memset(&msg, CLEAR, sizeof(SYS2MP_SENS_MSG));
+
+	FOREVER
+	{
+		mpEndSkillCommandProcess(MP_SL_ID1, &msg);
+		status = mpReceiveSkillCommand(MP_SL_ID1, &msg);  // 接收命令，但是实际工作中到底谁发的command呢？
+
+		if (status == OK)
+		{
+			//printf("mpReceiveSkillCommand OK\n\r");
+			//printf("main_comm %d\n\r", msg.main_comm);
+			//printf("sub_comm %d\n\r", msg.sub_comm);
+			//printf("exe_tsk %d\n\r", msg.exe_tsk);
+			//printf("exe_apl %d\n\r", msg.exe_apl);
+			//printf("comm_link %s\n\r", msg.cmd);
+		}
+		else
+		{
+			//printf("mpReceiveSkillCommand Error\n\r");
+			mpTaskDelay(100);
+			continue;
+		}
+
+		switch (msg.main_comm)
+		{
+			case MP_SKILL_COMM:
+				switch (msg.sub_comm)
+				{
+					case MP_SKILL_SEND:
+						printf("MP_SKILL_SEND\n\r");
+						break;
+
+					case MP_SKILL_END:
+						printf("MP_SKILL_END\n\r");
+						break;
+
+					default:
+						printf("Unknown Sub Command\n\r");
+						break;
+				}
+				break;
+
+			case MP_SL_RST_COMM:
+
+				switch (msg.sub_comm)
+				{
+					case MP_SL_SOFTWARE_RST:
+						printf("MP_SL_SOFTWARE_RST\n\r");
+						break;
+
+					case MP_SL_ALM_RST:
+						printf("MP_SL_ALM_RST\n\r");
+						break;
+
+					case MP_START_SEG_CLK:
+						printf("MP_START_SEG_CLK\n\r");
+						break;
+
+					case MP_SE_PRM_TRANS:
+						printf("MP_SE_PRM_TRANS\n\r");
+						break;
+
+					default:
+						printf("Unknown Sub Command\n\r");
+						break;
+				}
+				break;
+
+			default:
+				printf("Unknown Main Command\n\r");
+				break;
+		}
+	}
 }

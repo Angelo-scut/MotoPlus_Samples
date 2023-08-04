@@ -27,6 +27,7 @@ void tcp_server_task(void){
 BOOL encoding(char *pos);
 void decoding(char *msg);
 int int2str(LONG num, char* str);
+void angle_dist_limit(LONG* data, int dist, int angle);
 
 // 写个屁帮助文档，写个readme.md就算看得起自己了
 // const char* help_str = "help/HELP: help document.\n The number of position argments must be 6, and speed must be 1. \n Except that corr_path and corr_speed(\%) must be in relative type, all the other arguments must be in absolutary type.\n Commands include 'line', 'line_vec',";
@@ -238,24 +239,28 @@ void decoding(char *msg){
     case COMMAND_CORRPATH:
         if (cur_idx == 6)
         {
-            memcpy(&offset[0], &data[0], (sizeof(long) * 6));
+			//TODO:纠偏是一个时钟瞬发的，所以要限制不能超过1mm，以及不能超过3degree
+            angle_dist_limit(data, 1000, 30000);
+
+			memcpy(&offset[0], &data[0], (sizeof(long) * 6));
             sensor_flag = TRUE;
         }
         break;
     case COMMAND_FRCPATH_END:
-        if (cur_idx == 0)
+        if (cur_idx == 1)
         {
-            sensor_flag = TRUE;
+			//SetBVar(8, command_no);
+			sensor_flag = TRUE;
         }
         break;
     case COMMAND_SPD_OVR_ON:
-        if (cur_idx == 1)
+        if (cur_idx == 2)
         {
             speed = data[0];
             sensor_flag = TRUE;
         }
     case COMMAND_SPD_OVR_OFF:
-        if (cur_idx == 0)
+        if (cur_idx == 1)
         {
             sensor_flag = TRUE;
         }
@@ -268,7 +273,10 @@ void decoding(char *msg){
         //     mpSemGive(semid);
         // }
         break;
-        
+    case COMMAND_EXIT:
+        B_addr = B_VAR_EXIT;  // TODO:退出的时候需要将SKILLSND使不能
+		SetBVar(B_addr, 1);
+        break;
     default:
         break;
     }
@@ -295,4 +303,30 @@ int int2str(LONG num, char* str){
 		str[idx++] = '-';
 	}
     return idx - 1;
+}
+
+void angle_dist_limit(LONG* data, int dist, int angle){
+    int i = 0;
+    for (; i < 3; i++){
+        if (data[i] > dist)
+        {
+            data[i] = dist;
+        }
+        else if (data[i] < -dist)
+        {
+            data[i] = dist;
+        }
+    }
+        
+    for (; i < 6; i++){
+        if (data[i] > angle)
+        {
+            data[i] = angle;
+        }
+        else if (data[i] < -angle)
+        {
+            data[i] = angle;
+        }
+    }
+        
 }
