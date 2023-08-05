@@ -109,16 +109,21 @@ void ap_TCP_Sserver(ULONG portNo){
             
 
             // 若没有要退出，则返回现在机器人位姿，TODO:这里要注意时序，如果client没有处于listen状态，这里的发送是否会丢包？
-            if(encoding(send_buff)){
+            // if(encoding(send_buff)){
+            //     bytesSend = mpSend(acceptHandle, send_buff, strlen(send_buff), 0);
+            //     if (bytesSend < 0)
+            //         break;
+                
+            //     decoding(recv_buff);  // 是否解码成功，解码成功还要进行安全判断,安全判断直接给到设置那边去
+            // }
+
+            // 换一种逻辑，不是每次都非要返回当前位置，只有当PC询问的时候才返回
+            decoding(recv_buff);
+            if(command_no == COMMAND_UNKNOW && encoding(send_buff)){
                 bytesSend = mpSend(acceptHandle, send_buff, strlen(send_buff), 0);
                 if (bytesSend < 0)
                     break;
-                
-                decoding(recv_buff);  // 是否解码成功，解码成功还要进行安全判断,安全判断直接给到设置那边去
             }
-                
-            // if (bytesSend != bytesRecv)
-                // break;
             
         }
         mpClose(acceptHandle);

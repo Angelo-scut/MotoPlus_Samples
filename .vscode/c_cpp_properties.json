@@ -4,7 +4,8 @@
             "name": "G++",
             "includePath": [
                 "${workspaceFolder}/**",
-                "D:\\MotoPlus\\mpbuilder\\inc\\**"
+                "D:\\MotoPlus\\mpbuilder\\inc\\**",
+                "D:\\Qt5.9.2\\5.9.2\\msvc2017_64\\include\\**"
             ],
             "defines": [
                 "_DEBUG",

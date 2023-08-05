@@ -11,6 +11,7 @@
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-I", "D:\\MotoPlus\\mpbuilder\\inc",
+                "-I", "D:\\Qt5.9.2\\5.9.2\\msvc2017_64\\include",
             ],
             "options": {
                 "cwd": "${fileDirname}"
