@@ -84,7 +84,7 @@ void offsControlTask(void){
                 command_no = COMMAND_UNKNOW;
                 break;
             case COMMAND_SPD_OVR_OFF:
-                ret = mpMeiPutSpdOverride(MP_SL_ID1, OFF, NULL);
+                ret = mpMeiPutSpdOverride(MP_SL_ID1, OFF, NULL);  // TODO:速度无法恢复
                 if (ret != 0)
                 {
                     //TODO:返回错误信息

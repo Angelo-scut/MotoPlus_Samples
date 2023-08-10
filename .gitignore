@@ -50,3 +50,11 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# vs complie documents
+.vs
+*.filters
+*.user
+Backup
+*.htm
+x64

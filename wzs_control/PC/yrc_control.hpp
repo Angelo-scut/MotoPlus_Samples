@@ -12,6 +12,7 @@
 #ifndef YRC_CONTROL_HPP
 #define YRC_CONTROL_HPP
 
+#include <QtWidgets/QMainWindow>  // TODO:还要写一版不依赖Qt的，主要是TCP
 #include <QtNetwork/qtcpsocket.h>
 #include <string>
 #include <memory>
@@ -31,41 +32,65 @@
 #define COMMAND_FAST_LOC_MUNAL  11
 #define COMMAND_EXIT            12
 
-namespace yrc{
-    using std::string, std::vector;
+#define POSITION_FACTOR         1000
+#define ANGLE_FACTOR            10000
+#define SENSOR_SPEED_FACTOR     10000
+#define SPEED_FACTOR            10
 
-    class YRC_control{
-        YRC_control();
-        bool connect(const string& ip="192.168.255.1", int port=11000);
+#define BUFF_LEN                1024
+
+namespace yrc{
+    using namespace std;
+
+    class YRC_control : public QWidget{
+	public:
+		YRC_control(const YRC_control& yrc_ctrl)=default;
+        YRC_control(const string& ip="192.168.255.1", int port=11000);
+        ~YRC_control();
+
+        void connect(const string& ip="192.168.255.1", int port=11000);
         
         /* Manual Function */
-        void fast_locate_manual();
-        void line_manual();
-        void circle_manual();
+        void fast_locate_manual(){ send(COMMAND_FAST_LOC_MUNAL); }
+        void line_manual(){ send(COMMAND_LINE_MANUAL); }
+        void circle_manual(){ send(COMMAND_CIRCLE_MANUAL); }
 
         /* Remote Function */
-        void fast_locate_pc(const float pos[6]);        
-        void line_pc(const float pos[6]);
-        void circle_pc(const float pos[3][6]);
+        void fast_locate_pc(const vector<float>& pos);        
+        void line_pc(const vector<float>& pos);
+        void circle_pc(const vector<float>& p1, 
+                        const vector<float>& p2, 
+                        const vector<float>& p3);
         
         /* Sensor Function */
-        void change_speed(float spd);
-        void restore_speed();
-        void force_path_end();
-        void rectify_path(float val, int axis);
-        void rectify_path(const float pos[6]);
+        void change_speed(float spd_ftr){ send(COMMAND_SPD_OVR_ON, { spd_ftr }); }
+        void restore_speed(){ send(COMMAND_SPD_OVR_OFF); }
+        void force_path_end(){ send(COMMAND_FRCPATH_END); }
+        void corr_path(float val, int axis);
+        void corr_path(const vector<float>& pos);
 
-        void job_exit();
-        void sever_exit();
+        void job_exit() { send(COMMAND_EXIT); }
+        void sever_exit(){ tcp_send_event("EXIT"); }
 
-        const vector<int> get_position();
+        vector<float> get_position();
         const float get_speed();
+
     private:
-        static void decoding(const char* mesg);
-        static void encoding(const float data[6]);
+        static void decoding(string& msg, vector<float>& pos, float& spd);
+        static void encoding(string& msg, int cmd, const vector<float>& pos=vector<float>());
+        void send(int cmd, const vector<float>& pos=vector<float>());
+        void get_position_() { send(COMMAND_UNKNOW); }
+
+        void tcp_send_event(const string& msg);
+		void tcp_receive_event();
+		/* Qt signal and slot */
+		void tcp_connect_event() { is_tcp_connect = true; }
+		void tcp_disconnect_event() { is_tcp_connect = false; }
+		
         float speed;
-        float position[6];
+        vector<float> pos;
         QTcpSocket *client;
+        bool is_tcp_connect;
     };
 
 }

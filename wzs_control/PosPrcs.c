@@ -67,11 +67,12 @@ void pos_process_task(void){
         if (BVvalue0 == 1 && safe_guard(SAFE_DIST, SAFE_ANGL))
         {
             mpPutPosVarData(&pos_data, 1);
-            //BVvalue1 = 1;
-            //rt = SetBVar(1, &BVvalue1);
 			// SetIo(10014, ON);
 			//PulseOut(10014, PULSE_TIME);  // 不能太低，INFORM语言运行速率没那么快
 			SetBVar(B_addr, 1);
+
+			//BVvalue1 = (LONG)pos_data.usIndex;
+			//rt = SetBVar(12, &BVvalue1);  // 仅仅为了测试
         }
     }
     
@@ -105,7 +106,7 @@ BOOL safe_guard(int pos_limit, int  angle_limit){
     }
     pos_data.ulValue[0] |= (long)(mp_cart_pos_rsp_data.sConfig << 8); // 保留当前位置的设置
     pos_data.usType = MP_RESTYPE_VAR_ROBOT;  
-    pos_data.usIndex = 10;			// P var number (P010)，这里确定是P010
+    //pos_data.usIndex = 10;			// P var number (P010)，这里确定是P010
     pos_data.ulValue[0] |= 0x0010;	// Cartesian (base coordinates) ，这个只是确定坐标轴而已
     return TRUE;
 }

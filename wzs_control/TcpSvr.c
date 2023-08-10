@@ -119,7 +119,8 @@ void ap_TCP_Sserver(ULONG portNo){
 
             // 换一种逻辑，不是每次都非要返回当前位置，只有当PC询问的时候才返回
             decoding(recv_buff);
-            if(command_no == COMMAND_UNKNOW && encoding(send_buff)){
+            //if(command_no == COMMAND_UNKNOW && encoding(send_buff)){
+			if (encoding(send_buff)) {
                 bytesSend = mpSend(acceptHandle, send_buff, strlen(send_buff), 0);
                 if (bytesSend < 0)
                     break;
@@ -204,14 +205,16 @@ void decoding(char *msg){
     }
 
     if (token != NULL) return;  // 如果数据位超过了10位，直接丢弃
-	//SetBVar(0, command_no);  // TODO: 测试用
-	//SetBVar(7, cur_idx);  // TODO: 测试用
+	SetBVar(10, command_no);  // TODO: 测试用
+	SetBVar(11, cur_idx);  // TODO: 测试用
     switch (command_no)
     {
     case COMMAND_FAST_LOC_PC:
         if(cur_idx == 6){
             memcpy(&pos_data.ulValue[2], &data[0], (sizeof(long) * 6));
-            pos_data.usIndex = POS_VAR_FAST_LOC;
+			USHORT uspIdx = POS_VAR_FAST_LOC;
+			//memcpy(&pos_data.usIndex, &uspIdx, sizeof(USHORT));
+			pos_data.usIndex = POS_VAR_FAST_LOC;
 			B_addr = B_VAR_FAST_LOC_PC;
             mpSemGive(semid);  // 发射信号，告诉处理的线程已经接收到新的位置信息了
         }
@@ -224,6 +227,8 @@ void decoding(char *msg){
         if (cur_idx == 6)  // 如果发过来的不是6个位姿的话，TODO:如果要加入速度这里需要修改一下,决定不直接修改速度了，要修改直接在示教器上修改
         {
             memcpy(&pos_data.ulValue[2], &data[0], (sizeof(long) * 6));
+			USHORT uspIdx = POS_VAR_FAST_LOC;
+			//memcpy(&pos_data.usIndex, &uspIdx, sizeof(USHORT));
             pos_data.usIndex = POS_VAR_LINE;
 			B_addr = B_VAR_LINE;
             mpSemGive(semid);  // 发射信号，告诉处理的线程已经接收到新的位置信息了
@@ -237,7 +242,7 @@ void decoding(char *msg){
     //     if (cur_idx == 6)
     //     {
     //         memcpy(&pos_data.ulValue[2], &data[0], (sizeof(long) * 6));
-    //         pos_data.usIndex = POS_VAR_LINE_VEC;
+    //         pos_data.usIndex = (USHORT)POS_VAR_LINE_VEC;
     //         mpSemGive(semid);
     //     }
     //     break;
@@ -252,20 +257,20 @@ void decoding(char *msg){
         }
         break;
     case COMMAND_FRCPATH_END:
-        if (cur_idx == 1)
+        if (cur_idx == 0)  // 为什么ui界面进来的这个会等于0呢？
         {
-			//SetBVar(8, command_no);
+			//SetBVar(9, command_no);
 			sensor_flag = TRUE;
         }
         break;
     case COMMAND_SPD_OVR_ON:
-        if (cur_idx == 2)
+        if (cur_idx == 1)
         {
             speed = data[0];
             sensor_flag = TRUE;
         }
     case COMMAND_SPD_OVR_OFF:
-        if (cur_idx == 1)
+        if (cur_idx == 0)
         {
             sensor_flag = TRUE;
         }
