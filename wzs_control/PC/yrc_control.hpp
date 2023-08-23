@@ -12,7 +12,7 @@
 #ifndef YRC_CONTROL_HPP
 #define YRC_CONTROL_HPP
 
-#include <QtWidgets/QMainWindow>  // TODO:»¹ÒªÐ´Ò»°æ²»ÒÀÀµQtµÄ£¬Ö÷ÒªÊÇTCP
+#include <QtWidgets/QMainWindow>  // TODO:ï¿½ï¿½ÒªÐ´Ò»ï¿½æ²»ï¿½ï¿½ï¿½ï¿½Qtï¿½Ä£ï¿½ï¿½ï¿½Òªï¿½ï¿½TCP
 #include <QtNetwork/qtcpsocket.h>
 #include <string>
 #include <memory>
@@ -82,7 +82,7 @@ namespace yrc{
         void get_position_() { send(COMMAND_UNKNOW); }
 
         void tcp_send_event(const string& msg);
-		void tcp_receive_event();
+		bool tcp_receive_event(int msec=3000);
 		/* Qt signal and slot */
 		void tcp_connect_event() { is_tcp_connect = true; }
 		void tcp_disconnect_event() { is_tcp_connect = false; }

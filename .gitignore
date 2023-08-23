@@ -53,6 +53,7 @@ dkms.conf
 
 # vs complie documents
 .vs
+.vscode
 *.filters
 *.user
 Backup

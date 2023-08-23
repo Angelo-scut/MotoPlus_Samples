@@ -161,6 +161,10 @@ void test_ui::circle_pc_button_event()
 void test_ui::get_position_button_event()
 {
 	pos = controller->get_position();
+	if (pos.empty())
+	{
+		pos = vector<float>(6, 0.f);
+	}
 	update_statusBar();
 	position_update_event();
 	//TODO: update position information to the status bar
@@ -174,7 +178,7 @@ void test_ui::get_speed_button_event()
 
 void test_ui::corrpath_position_button_event()
 {
-	//controller->corr_path(pos);  // ²»ÄÜÖ±½Ó¾ÀÆ«£¬ÒòÎª±¾À´¾ÍÓ¦¸ÃÔÚ1mmÖ®ÄÚµÄ£¬ÕâÀïÃ»ÓÐ¼ÓÏÞÖÆ
+	//controller->corr_path(pos);  // ï¿½ï¿½ï¿½ï¿½Ö±ï¿½Ó¾ï¿½Æ«ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½1mmÖ®ï¿½ÚµÄ£ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½Ð¼ï¿½ï¿½ï¿½ï¿½ï¿½
 }
 
 void test_ui::corrpath_axis_button_event()

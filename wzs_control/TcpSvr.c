@@ -119,8 +119,8 @@ void ap_TCP_Sserver(ULONG portNo){
 
             // 换一种逻辑，不是每次都非要返回当前位置，只有当PC询问的时候才返回
             decoding(recv_buff);
-            //if(command_no == COMMAND_UNKNOW && encoding(send_buff)){
-			if (encoding(send_buff)) {
+            if(command_no == COMMAND_UNKNOW && encoding(send_buff)){  // 如果一直发的话，那边没有接收会不会出现缓存呢？
+			// if (encoding(send_buff)) {
                 bytesSend = mpSend(acceptHandle, send_buff, strlen(send_buff), 0);
                 if (bytesSend < 0)
                     break;

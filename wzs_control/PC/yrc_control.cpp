@@ -54,8 +54,7 @@ namespace yrc{
 
     vector<float> YRC_control::get_position(){
         get_position_();
-        if(client->waitForReadyRead(50)){  // 等待50ms
-            tcp_receive_event();
+        if(tcp_receive_event()){  // 等待50ms
             return pos;
         }
         else{
@@ -65,8 +64,7 @@ namespace yrc{
 
     const float YRC_control::get_speed(){
         send(COMMAND_UNKNOW);
-        if(client->waitForReadyRead(50)){
-            tcp_receive_event();
+        if(tcp_receive_event()){
             return speed;
         }
         else{
@@ -135,10 +133,14 @@ namespace yrc{
         
     }
 
-    void YRC_control::tcp_receive_event(){
-        QByteArray buff = client->readAll();
-        string msg = buff.toStdString();
-        decoding(msg, pos, speed);
+    bool YRC_control::tcp_receive_event(int msec){
+        if(client->waitForReadyRead(msec)){  // TODO:读取的时候，如何避免多个信息读入呢？比如上一帧信息是否会阻塞？
+            QByteArray buff = client->readAll();
+            string msg = buff.toStdString();
+            decoding(msg, pos, speed);
+            return true;
+        }
+        return false;
     }
 
     void YRC_control::send(int cmd, const vector<float>& pos){
