@@ -2,6 +2,9 @@
 #include "yrc_control.hpp"
 #include <cstring>
 #include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <opencv2/opencv.hpp>
 
 namespace yrc{
     YRC_control::YRC_control(const string& ip, int port){
@@ -61,6 +64,66 @@ namespace yrc{
             return vector<float>();  // 若没有接收到数据，则返回空
         }
     }
+    cv::Mat YRC_control::get_tcpMatrix(){
+        tcp_send_event("GET_TOOL_DATA");
+        if(tcp_receive_event()){
+
+            double rx_deg, ry_deg, rz_deg;
+            double rx_rad, ry_rad, rz_rad;
+            double x, y, z;
+
+            rx_deg = tool_data[3]; 
+            ry_deg = tool_data[4];
+            rz_deg = tool_data[5];
+
+            rx_rad = degreesToRadians(rx_deg);
+            ry_rad = degreesToRadians(ry_deg);
+            rz_rad = degreesToRadians(rz_deg);
+
+            x = tool_data[0];
+            y = tool_data[1];
+            z = tool_data[2];
+
+            cv::Mat rotationMatrix = calculateRotationMatrix(rx_rad, ry_rad, rz_rad);
+            cv::Mat tcpMatrix = cv::Mat::eye(4, 4, CV_64F);
+            rotationMatrix.copyTo(tcpMatrix(cv::Rect(0, 0, 3, 3)));
+            
+            tcpMatrix.at<double>(0, 3) = x;
+            tcpMatrix.at<double>(1, 3) = y;
+            tcpMatrix.at<double>(2, 3) = z;
+            
+            return tcpMatrix;
+        }  
+        else {
+        return cv::Mat::zeros(4, 4, CV_64F);
+        }  
+            
+    }
+    cv::Mat YRC_control::calculateRotationMatrix(double rx, double ry, double rz) {
+        cv::Mat rotationX = cv::Mat::eye(4, 4, CV_64F);
+        cv::Mat rotationY = cv::Mat::eye(4, 4, CV_64F);
+        cv::Mat rotationZ = cv::Mat::eye(4, 4, CV_64F);
+            
+        rotationX.at<double>(1, 1) = cos(rx);
+        rotationX.at<double>(1, 2) = -sin(rx);
+        rotationX.at<double>(2, 1) = sin(rx);
+        rotationX.at<double>(2, 2) = cos(rx);
+            
+        rotationY.at<double>(0, 0) = cos(ry);
+        rotationY.at<double>(0, 2) = sin(ry);
+        rotationY.at<double>(2, 0) = -sin(ry);
+        rotationY.at<double>(2, 2) = cos(ry);
+            
+        rotationZ.at<double>(0, 0) = cos(rz);
+        rotationZ.at<double>(0, 1) = -sin(rz);
+        rotationZ.at<double>(1, 0) = sin(rz);
+        rotationZ.at<double>(1, 1) = cos(rz);
+        cv::Mat result = rotationZ * rotationY * rotationX;
+        return result;
+        }
+    double YRC_control::degreesToRadians(double degrees) {
+        return degrees * M_PI / 180.0;
+        }
 
     const float YRC_control::get_speed(){
         send(COMMAND_UNKNOW);
@@ -71,12 +134,22 @@ namespace yrc{
             return -1;  // 若没有接收到数据，则返回-1
         }
     }
+    
+    void YRC_control::decoding(string& msg, vector<float>& pos, float& spd, vector<double>& tool_data){
+        if (msg.find("POS_SPEED:") == 0) {
+            decodePosAndSpeed(msg.substr(strlen("POS_SPEED:")), pos, spd);
+        } 
+        else if (msg.find("TOOL_DATA:") == 0) {
+            decodeToolData(msg.substr(strlen("TOOL_DATA:")), tool_data);
+        } 
+        else {
+        // 未知消息类型或格式错误
+        }
+    }
 
-    void YRC_control::decoding(string& msg, vector<float>& pos, float& spd){
-        long data[7];  // 6轴+速度
-        memset(&data[0], 0, sizeof(long) * 7);
-        
-        char* msg_c = (char*)msg.c_str();
+    void YRC_control::decodePosAndSpeed(const std::string& dataStr, vector<float>& pos, float& spd) {
+        long data[7];
+        char* msg_c = (char*)dataStr.c_str();
         char* token = strtok(msg_c, ",");
         int idx = 0;
         while (token != NULL && idx < 7)
@@ -85,19 +158,38 @@ namespace yrc{
             token = strtok(NULL, ",");
         }
 
-        if(token != NULL || idx != 7) return;
+        if(idx != 7) return;
 
         int i = 0;
-        for (; i < 3; i++)
+        for(; i < 3; i++)
         {
             pos[i] = (float)data[i] / POSITION_FACTOR;
         }
-        for(; i<6; i++){
+        for(; i < 6; i++){
             pos[i] = (float)data[i] / ANGLE_FACTOR;
         }
 
         spd = (float)data[i] / SPEED_FACTOR;  // 这个是真实的速度
-        
+    }
+
+    void YRC_control::decodeToolData(const std::string& dataStr, vector<double>& tool_data) {
+        long data[6];
+        char* msg_c = (char*)dataStr.c_str();
+        char* token = strtok(msg_c, ",");
+        int idx = 0;
+        while (token != NULL && idx < 6)
+        {
+            data[idx++] = atoi(token);
+            token = strtok(NULL, ",");
+        }
+
+        if(idx != 6) return;
+
+        tool_data.resize(6);
+        for(int i = 0; i < 6; i++)
+        {
+            tool_data[i] = (float)data[i] / (i < 3 ? POSITION_FACTOR : ANGLE_FACTOR);  // 前3个数据是位置, 后3个数据是角度
+        }
     }
 
     void YRC_control::encoding(string& msg, int cmd, const vector<float>& pos){
@@ -137,7 +229,7 @@ namespace yrc{
         if(client->waitForReadyRead(msec)){  // TODO:读取的时候，如何避免多个信息读入呢？比如上一帧信息是否会阻塞？
             QByteArray buff = client->readAll();
             string msg = buff.toStdString();
-            decoding(msg, pos, speed);
+            decoding(msg, pos, speed, tool_data);
             return true;
         }
         return false;

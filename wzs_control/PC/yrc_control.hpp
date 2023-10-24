@@ -77,9 +77,14 @@ namespace yrc{
 
     private:
         static void decoding(string& msg, vector<float>& pos, float& spd);
+        void decodePosAndSpeed(const std::string& dataStr, vector<float>& pos, float& spd);
+        void decodeToolData(const std::string& dataStr, vector<double>& tool_data)
         static void encoding(string& msg, int cmd, const vector<float>& pos=vector<float>());
         void send(int cmd, const vector<float>& pos=vector<float>());
         void get_position_() { send(COMMAND_UNKNOW); }
+        cv::Mat get_tcpMatrix();
+        cv::Mat calculateRotationMatrix(double rx, double ry, double rz);
+        double degreesToRadians(double degrees);
 
         void tcp_send_event(const string& msg);
 		bool tcp_receive_event(int msec=3000);
