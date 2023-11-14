@@ -39,8 +39,11 @@
 
 #define BUFF_LEN                1024
 
+#define M_PI 3.14159265358979323846
+
 namespace yrc{
     using namespace std;
+
 
     class YRC_control : public QWidget{
 	public:
@@ -76,9 +79,9 @@ namespace yrc{
         const float get_speed();
 
     private:
-        static void decoding(string& msg, vector<float>& pos, float& spd);
-        void decodePosAndSpeed(const std::string& dataStr, vector<float>& pos, float& spd);
-        void decodeToolData(const std::string& dataStr, vector<double>& tool_data)
+        static void decoding(string& msg, vector<float>& pos, float& spd, vector<double>& tool_data);
+        static void decodePosAndSpeed(const std::string& dataStr, vector<float>& pos, float& spd);
+        static void decodeToolData(const std::string& dataStr, vector<double>& tool_data);
         static void encoding(string& msg, int cmd, const vector<float>& pos=vector<float>());
         void send(int cmd, const vector<float>& pos=vector<float>());
         void get_position_() { send(COMMAND_UNKNOW); }
@@ -94,6 +97,7 @@ namespace yrc{
 		
         float speed;
         vector<float> pos;
+        vector<double> tool_data;
         QTcpSocket *client;
         bool is_tcp_connect;
     };

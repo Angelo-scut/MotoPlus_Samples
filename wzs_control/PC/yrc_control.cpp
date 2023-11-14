@@ -4,12 +4,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
 
-namespace yrc{
-    YRC_control::YRC_control(const string& ip, int port){
-		client = new QTcpSocket(this);
-		QObject::connect(client, &QTcpSocket::connected, this, &YRC_control::tcp_connect_event);
+namespace yrc {
+    YRC_control::YRC_control(const string& ip, int port) {
+        client = new QTcpSocket(this);
+        QObject::connect(client, &QTcpSocket::connected, this, &YRC_control::tcp_connect_event);
         // QObject::connect(client, &QTcpSocket::readyRead, this, &YRC_control::tcp_receive_event);  // 因为要同步，所以要手动读，不能自动读
         QObject::connect(client, &QTcpSocket::disconnected, this, &YRC_control::tcp_disconnect_event);
         connect(ip, port);
@@ -18,39 +19,39 @@ namespace yrc{
         get_position_();
     }
 
-    YRC_control::~YRC_control(){
+    YRC_control::~YRC_control() {
         client->close();
         is_tcp_connect = false;
         pos.clear();
     }
 
-    void YRC_control::connect(const string& ip, int port){
+    void YRC_control::connect(const string& ip, int port) {
         client->connectToHost(QString::fromStdString(ip), port);  // TODO:如何直接等待接收呢？
     }
 
-    void YRC_control::fast_locate_pc(const vector<float>& pos){
+    void YRC_control::fast_locate_pc(const vector<float>& pos) {
         if (pos.size() != 6)    return;
         send(COMMAND_FAST_LOC_PC, pos);
     }
 
-    void YRC_control::line_pc(const vector<float>& pos){
+    void YRC_control::line_pc(const vector<float>& pos) {
         if (pos.size() != 6)    return;
         send(COMMAND_LINE_PC, pos);
     }
 
-    void YRC_control::circle_pc(const vector<float>& p1, 
-                                const vector<float>& p2, const vector<float>& p3){
-        
+    void YRC_control::circle_pc(const vector<float>& p1,
+        const vector<float>& p2, const vector<float>& p3) {
+
     }
 
-    void YRC_control::corr_path(float val, int axis){
-        if(axis < 0 || axis > 5) return;
+    void YRC_control::corr_path(float val, int axis) {
+        if (axis < 0 || axis > 5) return;
         vector<float> pos(6, 0.f);
         pos[axis] = val;
         send(COMMAND_CORRPATH, pos);
     }
 
-    void YRC_control::corr_path(const vector<float>& pos){
+    void YRC_control::corr_path(const vector<float>& pos) {
         if (pos.size() != 6)    return;
         send(COMMAND_CORRPATH, pos);
     }
@@ -143,7 +144,7 @@ namespace yrc{
             decodeToolData(msg.substr(strlen("TOOL_DATA:")), tool_data);
         } 
         else {
-        // 未知消息类型或格式错误
+
         }
     }
 
