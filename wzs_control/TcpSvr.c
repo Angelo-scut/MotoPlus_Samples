@@ -76,10 +76,6 @@ void ap_TCP_Sserver(ULONG portNo){
     pos_data.usIndex = 10; // 修改的是P0010这个位置的位置变量
     pos_data.ulValue[0] |= 0x0010;  // 设置坐标轴为基座的笛卡尔坐标系
 
-    MP_TOOL_RSP_DATA mp_tool_rsp_data;  // 用于接收工具数据
-    SHOR short;  // 当有工具群组的时候，可以通过这个控制返回哪个工具的数据
-    short = 0; // 只取工具0的信息
-
     while (1)
     {
         int     acceptHandle;
@@ -100,21 +96,22 @@ void ap_TCP_Sserver(ULONG portNo){
             int     bytesRecv;
             int     bytesSend;
             char    recv_buff[BUFF_MAX + 1];
-            char    send_buff_1[BUFF_MAX + 1];
-            char    send_buff_2[BUFF_MAX + 1];
+            char    send_buff[BUFF_MAX + 1];
             
-            MP_TOOL_RSP_DATA mp_tool_rsp_data;  // 用于接收工具数据
-            SHOR short;  // 当有工具群组的时候，可以通过这个控制返回哪个工具的数据
-            short = 0; // 只取工具0的信息
-            if (mpGetToolData(short, &mp_tool_rsp_data) != 0)  //
-            {
-                puts("get tool data error!");
-                return cv::Mat();
-            }
+
+            
+            //MP_TOOL_RSP_DATA mp_tool_rsp_data;  // 用于接收工具数据
+
+            //if (mpGetToolData(short, &mp_tool_rsp_data) != 0)  //
+            //{
+                //puts("get tool data error!");
+                //return cv::Mat();
+            //}
 
             memset(recv_buff, 0, sizeof(recv_buff));
-            memset(send_buff_1, 0, sizeof(send_buff_1));
-            memset(send_buff_2, 0, sizeof(send_buff_2));
+            memset(send_buff, 0, sizeof(send_buff));
+
+       
 
             bytesRecv = mpRecv(acceptHandle, recv_buff, BUFF_MAX, 0);  // 等待接收来自client的字符
 
@@ -124,15 +121,7 @@ void ap_TCP_Sserver(ULONG portNo){
             if (strncmp(recv_buff, "EXIT", 4) == 0 || strncmp(recv_buff, "exit", 4) == 0)  // 如果client发送退出命令，则退出
                 break;
             
-            // 当收到"GET_TOOL_DATA"请求时，发送工具数据回去
-            if (strncmp(recv_buff, "GET_TOOL_DATA", 13) == 0) {
-                int n = snprintf(send_buff_1, BUFF_MAX, "TOOL_DATA:%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
-                mp_tool_rsp_data.x, mp_tool_rsp_data.y, mp_tool_rsp_data.z,
-                mp_tool_rsp_data.rx, mp_tool_rsp_data.ry, mp_tool_rsp_data.rz);
-                bytesSend = mpSend(acceptHandle, send_buff_1, n, 0);
-                if (bytesSend < 0)
-                break;
-            }
+
 
             
 
@@ -147,11 +136,22 @@ void ap_TCP_Sserver(ULONG portNo){
 
             // 换一种逻辑，不是每次都非要返回当前位置，只有当PC询问的时候才返回
             decoding(recv_buff);
-            if(command_no == COMMAND_UNKNOW && encoding(send_buff_2)){  // 如果一直发的话，那边没有接收会不会出现缓存呢？
-			// if (encoding(send_buff)) {
-                bytesSend = mpSend(acceptHandle, send_buff_2, strlen(send_buff_2), 0);
+            // 当收到"GET_TOOL_DATA"请求时，发送工具数据回去
+            // if(strncmp(recv_buff, "GET_TOOL_DATA", 13) == 0){
+            //     int n = snprintf(send_buff_1, BUFF_MAX, "TOOL_DATA:%ld,%ld,%ld,%ld,%ld,%ld",
+            //     mp_tool_rsp_data.x, mp_tool_rsp_data.y, mp_tool_rsp_data.z,
+            //     mp_tool_rsp_data.rx, mp_tool_rsp_data.ry, mp_tool_rsp_data.rz);
+            //     bytesSend = mpSend(acceptHandle, send_buff_1, n, 0);
+            //     if (bytesSend < 0)
+            //     break;                
+            // }
+            if(command_no == COMMAND_UNKNOW || strncmp(recv_buff, "GET_TOOL_DATA", 13) == 0 ){  // 如果一直发的话，那边没有接收会不会出现缓存呢？
+                if(encoding(send_buff)){
+                bytesSend = mpSend(acceptHandle, send_buff, strlen(send_buff), 0);
                 if (bytesSend < 0)
                     break;
+                }
+
             }
             
         }
@@ -164,25 +164,38 @@ closeSockHandle:
 }
 
 BOOL encoding(char *pos){
-    MP_CTRL_GRP_SEND_DATA mp_ctrl_grp_send_data;  // 当时机器人群组的时候，可以通过这个控制返回哪个机器人的信息
-    mp_ctrl_grp_send_data.sCtrlGrp = 0; // 只取机器人1的信息，因为只有一台机器人
+    MP_CTRL_GRP_SEND_DATA mp_ctrl_grp_send_data; 
+    mp_ctrl_grp_send_data.sCtrlGrp = 0; 
+    MP_TOOL_RSP_DATA mp_tool_rsp_data;
+    SHORT tool_num = 0; 
 
-    if (mpGetCartPos(&mp_ctrl_grp_send_data, &mp_cart_pos_rsp_data) != 0)  // TODO:是否需要每次都对mp_cart_pos_rsp_data进行初始化
+    if (mpGetCartPos(&mp_ctrl_grp_send_data, &mp_cart_pos_rsp_data) != 0)
     {
         puts("get cart pos error!");
         return FALSE;
     }
 
-    char temp_str[20];
+    if (mpGetToolData(tool_num, &mp_tool_rsp_data) != 0)
+    {
+        puts("get tool data error!");
+        return FALSE;
+    }
+    
+    char temp_str[40];
     // memset(pos, 0, sizeof(pos));  // 这里的sizeof不对哦，这里只会返回pos的地址占位数,所以只能在函数外初始化
     memset(temp_str, 0, sizeof(temp_str));
+    LONG tool_data[6];
+    tool_data[0] = mp_tool_rsp_data.x;
+    tool_data[1] = mp_tool_rsp_data.y;
+    tool_data[2] = mp_tool_rsp_data.z;
+    tool_data[3] = mp_tool_rsp_data.rx;
+    tool_data[4] = mp_tool_rsp_data.ry;
+    tool_data[5] = mp_tool_rsp_data.rz;
 
-    // 添加 "POS_SPEED:" 标签到 pos
-    strcpy(pos, "POS_SPEED:");
-    cur_idx = strlen("POS_SPEED:");
+    int cur_idx = 0;
 
     int i = 0;
-    for (; i < MAX_CART_AXES; i++)
+    for (; i < 6; i++)
     {
         LONG temp_pos = mp_cart_pos_rsp_data.lPos[i];
         // int idx = 0;
@@ -205,6 +218,29 @@ BOOL encoding(char *pos){
         
     }
 
+    for (; i < 12; i++)
+    {
+        
+        // int idx = 0;
+        // while (temp_pos)
+        // {
+        //     temp_str[idx++] = temp_pos % 10 + '0';
+        //     temp_pos /= 10;
+        // }
+        // int j = idx - 1;
+        int j = int2str(tool_data[i - 6], temp_str);
+        for (; j > -1; j--)
+        {
+            pos[cur_idx++] = temp_str[j];
+        }
+        
+        // if (i < MAX_CART_AXES - 1)
+        {
+            pos[cur_idx++] = ',';
+        }
+        
+    }
+
     LONG speed = 0;
     int ret = GetIVar(SPEED_INTEGER, &speed);
     
@@ -213,7 +249,7 @@ BOOL encoding(char *pos){
     {
         pos[cur_idx++] = temp_str[j];
     }
-    
+
     pos[cur_idx] = '\0';  // 确保字符串以null结尾
     return TRUE;
 }
