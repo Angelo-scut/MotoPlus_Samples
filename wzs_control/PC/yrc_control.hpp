@@ -12,11 +12,12 @@
 #ifndef YRC_CONTROL_HPP
 #define YRC_CONTROL_HPP
 
-#include <QtWidgets/QMainWindow>  // TODO:ï¿½ï¿½ÒªÐ´Ò»ï¿½æ²»ï¿½ï¿½ï¿½ï¿½Qtï¿½Ä£ï¿½ï¿½ï¿½Òªï¿½ï¿½TCP
+#include <QtWidgets/QMainWindow>  // TODO:»¹ÒªÐ´Ò»°æ²»ÒÀÀµQtµÄ£¬Ö÷ÒªÊÇTCP
 #include <QtNetwork/qtcpsocket.h>
 #include <string>
 #include <memory>
 #include <vector>
+#include <opencv2/opencv.hpp> 
 
 #define COMMAND_UNKNOW          0
 #define COMMAND_CORRPATH        1
@@ -38,12 +39,10 @@
 #define SPEED_FACTOR            10
 
 #define BUFF_LEN                1024
-
 #define M_PI 3.14159265358979323846
 
 namespace yrc{
     using namespace std;
-
 
     class YRC_control : public QWidget{
 	public:
@@ -51,7 +50,7 @@ namespace yrc{
         YRC_control(const string& ip="192.168.255.1", int port=11000);
         ~YRC_control();
 
-        void connect(const string& ip="192.168.255.1", int port=11000);
+        void yrc_connect(const string& ip="192.168.255.1", int port=11000);
         
         /* Manual Function */
         void fast_locate_manual(){ send(COMMAND_FAST_LOC_MUNAL); }
@@ -77,29 +76,32 @@ namespace yrc{
 
         vector<float> get_position();
         const float get_speed();
+        vector<float> get_tooldata();
+        void sendGetToolDataCommand();
+        cv::Mat get_tcpMatrix();
+        bool is_tcp_connect;
 
     private:
-        static void decoding(string& msg, vector<float>& pos, float& spd, vector<double>& tool_data);
-        static void decodePosAndSpeed(const std::string& dataStr, vector<float>& pos, float& spd);
-        static void decodeToolData(const std::string& dataStr, vector<double>& tool_data);
-        static void encoding(string& msg, int cmd, const vector<float>& pos=vector<float>());
+        static void decoding(string& msg, vector<float>& pos, float& spd, vector<float>& tool_data);
+        static void encoding(string& msg, int cmd, const vector<float>& pos = vector<float>());
         void send(int cmd, const vector<float>& pos=vector<float>());
-        void get_position_() { send(COMMAND_UNKNOW); }
-        cv::Mat get_tcpMatrix();
-        cv::Mat calculateRotationMatrix(double rx, double ry, double rz);
-        double degreesToRadians(double degrees);
+        void get_position_() { send(COMMAND_UNKNOW); };
+        //cv::Mat get_tcpMatrix(const vector<double>& tool_data);
+        cv::Mat calculateRotationMatrix(float rx, float ry, float rz);
+        float degreesToRadians(float degrees);
+
 
         void tcp_send_event(const string& msg);
-		bool tcp_receive_event(int msec=3000);
+		void tcp_receive_event();
 		/* Qt signal and slot */
 		void tcp_connect_event() { is_tcp_connect = true; }
 		void tcp_disconnect_event() { is_tcp_connect = false; }
 		
         float speed;
         vector<float> pos;
-        vector<double> tool_data;
+        vector<float> tool_data;
         QTcpSocket *client;
-        bool is_tcp_connect;
+        //bool is_tcp_connect;
     };
 
 }
