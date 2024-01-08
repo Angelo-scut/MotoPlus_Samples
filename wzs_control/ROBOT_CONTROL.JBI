@@ -1,6 +1,13 @@
 NOP
 SKILLSND "COMMAND"  // 使能Sensor纠偏、路径终止、速度调控API
 SET B000 1
+SET B001 0
+SET B002 0
+SET B003 0
+SET B004 0
+SET B005 0
+SET B006 0
+SET B007 0
 SET I000 40  // 焊接速度为4mm/s，单位为0.1mm/s
 *START      // 功能选择
 IF( B001 = 1 ) THEN  // PC给点的直线
